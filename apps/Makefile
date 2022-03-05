@@ -12,9 +12,9 @@ INTE = -DEDGELONG
 
 #compilers
 $(info ************  Using CILK ************)
-PCC = g++
-PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA)
-LDFLAGS = -L../lib/mimalloc/out/release -lmimalloc 
+PCC = /usr/bin/g++-7
+PCFLAGS = -std=c++14 -fcilkplus -lcilkrts -g -O3 -DCILK $(INTV) $(INTE) $(EDGEDATA) -static
+#LDFLAGS = /home/yanpeng/Downloads/mimalloc/out/release/libmimalloc.a
 
 # dependencies
 COMMON=../core/common/binary_search.h ../core/common/bitsetscheduler.h ../core/common/blockRadixSort.h ../core/common/densebitset.h ../core/common/gettime.h ../core/common/index_map.h ../core/common/matrix.h ../core/common/maybe.h ../core/common/parallel.h ../core/common/parseCommandLine.h ../core/common/transpose.h ../core/common/quickSort.h ../core/common/rwlock.h ../core/common/sequence.h ../core/common/utils.h
