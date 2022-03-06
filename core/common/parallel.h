@@ -27,6 +27,8 @@
 #ifndef _PARALLEL_H
 #define _PARALLEL_H
 
+#define CILKP
+
 #if defined(CILK)
 #include <cilk/cilk.h>
 #include <cilk/reducer_opadd.h>
