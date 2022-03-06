@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 using namespace std;
 
 typedef pair<uintE, uintE> intPair;
@@ -93,6 +94,10 @@ struct words {
     free(Chars);
     free(Strings);
   }
+  void del_mmapped() {
+    munmap(Chars, n);
+    free(Strings);
+  }
 };
 
 inline bool isSpace(char c) {
@@ -109,6 +114,7 @@ inline bool isSpace(char c) {
 }
 
 _seq<char> readStringFromFile(char *fileName) {
+  /*
   ifstream file(fileName, ios::in | ios::binary | ios::ate);
   if (!file.is_open()) {
     std::cout << "Unable to open file: " << fileName << std::endl;
@@ -121,6 +127,24 @@ _seq<char> readStringFromFile(char *fileName) {
   file.read(bytes, n);
   file.close();
   return _seq<char>(bytes, n);
+  */
+  int fd;
+  struct stat st;
+
+  fd = open(fileName, O_RDONLY);
+  if (fd < 0) {
+    printf("Can not open %s\n", fileName);
+    return _seq<char>{};
+  }
+  fstat(fd, &st);
+
+  /* MIND_TODO add special mmap flag so that switch will not populate cache entry for a writable file mapping */
+  char *bytes = (char *)mmap(NULL, st.st_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
+  if (bytes == MAP_FAILED) {
+    printf("Can not mmap input file\n");
+    return _seq<char>{};
+  }
+  return _seq<char>(bytes, st.st_size);
 }
 
 // parallel code for converting a string to words
@@ -356,7 +380,8 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
 #endif
     }
   }
-  W.del(); // to deal with performance bug in malloc
+  //MIND_TODO: if cause problem, delete it
+  W.del_mmapped(); // to deal with performance bug in malloc
   vertex *v = newA(vertex, n);
   {
     parallel_for(uintV i = 0; i < n; i++) {
