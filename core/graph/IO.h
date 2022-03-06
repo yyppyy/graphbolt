@@ -113,6 +113,20 @@ inline bool isSpace(char c) {
   }
 }
 
+static void *MIND_malloc(unsigned long size) {
+  // MIND_TODO
+  // add special mmap flag so that switch will not populate cache entry for a writable file mapping
+
+  static unsigned long tot_size = 0;
+  tot_size += size;
+  cout << "total private memory size: " << (tot_size / (1 << 20)) << "MB" << endl;
+
+  int mmap_flags = MAP_PRIVATE|MAP_ANONYMOUS;
+#ifdef CONFIG_MIND
+#endif
+  return mmap(NULL, size * sizeof(bool), PROT_READ|PROT_WRITE, mmap_flags, -1, 0);
+}
+
 _seq<char> readStringFromFile(char *fileName) {
   /*
   ifstream file(fileName, ios::in | ios::binary | ios::ate);
@@ -128,6 +142,7 @@ _seq<char> readStringFromFile(char *fileName) {
   file.close();
   return _seq<char>(bytes, n);
   */
+ /*
   int fd;
   struct stat st;
 
@@ -138,13 +153,27 @@ _seq<char> readStringFromFile(char *fileName) {
   }
   fstat(fd, &st);
 
-  /* MIND_TODO add special mmap flag so that switch will not populate cache entry for a writable file mapping */
   char *bytes = (char *)mmap(NULL, st.st_size, PROT_READ|PROT_WRITE, MAP_PRIVATE, fd, 0);
   if (bytes == MAP_FAILED) {
     printf("Can not mmap input file\n");
     return _seq<char>{};
   }
   return _seq<char>(bytes, st.st_size);
+  */
+
+  ifstream file(fileName, ios::in | ios::binary | ios::ate);
+  if (!file.is_open()) {
+    std::cout << "Unable to open file: " << fileName << std::endl;
+    abort();
+  }
+  unsigned long end = file.tellg();
+  file.seekg(0, ios::beg);
+  unsigned long n = end - file.tellg();
+  // MIND_TODO
+  char *bytes = (char *)MIND_malloc((n + 1) * sizeof(char));
+  file.read(bytes, n);
+  file.close();
+  return _seq<char>(bytes, n);
 }
 
 // parallel code for converting a string to words
@@ -155,7 +184,10 @@ words stringToWords(char *Str, unsigned long n) {
   }
 
   // mark start of words
-  bool *FL = newA(bool, n);
+  // MIND_TODO
+  // bool *FL = newA(bool, n);
+  bool *FL = (bool *)MIND_malloc(n * sizeof(bool));
+
   FL[0] = Str[0];
   {
     parallel_for(unsigned long i = 1; i < n; i++) FL[i] = Str[i] && !Str[i - 1];
@@ -167,11 +199,16 @@ words stringToWords(char *Str, unsigned long n) {
   unsigned long *offsets = Off.A;
 
   // pointer to each start of word
-  char **SA = newA(char *, m);
+  // MIND_TODO
+  // char **SA = newA(char *, m);
+  char **SA = (char **)MIND_malloc(m * sizeof(char *));
   { parallel_for(unsigned long j = 0; j < m; j++) SA[j] = Str + offsets[j]; }
 
-  free(offsets);
-  free(FL);
+
+  //MIND_TODO
+  // skip free for now
+  // free(offsets);
+  // free(FL);
   return words(Str, n, SA, m);
 }
 
@@ -361,9 +398,11 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
     cout << "Bad input file" << endl;
     abort();
   }
-
-  intE *offsets = newA(intE, n);
-  uintV *edges = newA(uintV, m);
+  // MIND_TODO
+  //intE *offsets = newA(intE, n);
+  //uintV *edges = newA(uintV, m);
+  intE *offsets = (intE *)MIND_malloc(n * sizeof(intE));
+  uintV *edges = (uintV *)MIND_malloc(m * sizeof(uintV));
 #ifdef EDGEDATA
   EdgeData *edgeData = newA(EdgeData, m);
 #endif
@@ -381,7 +420,8 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
     }
   }
   //MIND_TODO: if cause problem, delete it
-  W.del_mmapped(); // to deal with performance bug in malloc
+  //skip free for now
+  //W.del_mmapped(); // to deal with performance bug in malloc
   vertex *v = newA(vertex, n);
   {
     parallel_for(uintV i = 0; i < n; i++) {
@@ -399,12 +439,16 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
 
   // TODO: ADD SYMMETRIC SUPPORT
   if (!isSymmetric) {
-    tOffsets = newA(intE, n);
+    // MIND_TODO
+    //tOffsets = newA(intE, n);
+    tOffsets = (intE *)MIND_malloc(n * sizeof(intE));
     { parallel_for(unsigned long i = 0; i < n; i++) tOffsets[i] = INT_E_MAX; }
 #ifdef EDGEDATA
     intWeights *temp = newA(intWeights, m);
 #else
-    intPair *temp = newA(intPair, m);
+    // MIND_TODO
+    //intPair *temp = newA(intPair, m);
+    intPair *temp = (intPair *)MIND_malloc(m * sizeof(intPair));
 #endif
     {
       parallel_for(unsigned long i = 0; i < n; i++) {
@@ -430,7 +474,9 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
       m = removeDuplicates(temp, m, isSymmetric, debugFlag);
     }
     tOffsets[temp[0].first] = 0;
-    uintV *inEdges = newA(uintV, m);
+    // MIND_TODO
+    //uintV *inEdges = newA(uintV, m);
+    uintV *inEdges = (uintV *)MIND_malloc(m * sizeof(uintV));
 #ifdef EDGEDATA
     inEdges[0] = temp[0].second.first;
     EdgeData *inEdgeData = newA(EdgeData, m);
@@ -454,7 +500,10 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
       }
     }
 
-    free(temp);
+    // MIND_TODO
+    // free(temp);
+    // skip free for now
+    // munmap(temp, m * sizeof(intPair));
 
     // fill in offsets of degree 0 vertices by taking closest non-zero
     // offset to the right

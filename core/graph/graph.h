@@ -376,7 +376,9 @@ public:
 #endif
       }
     }
-
+// MIND_TODO
+// let's just skip free for now
+/*
     if (ai != NULL) {
       free(ai);
       free(_outEdgeOffsets);
@@ -394,6 +396,7 @@ public:
       free(_inEdgeData);
 #endif
     }
+*/
   }
 
   void setSymmetric(bool flag) { symmetric = flag; }

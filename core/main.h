@@ -65,6 +65,8 @@ int parallel_main(int argc, char *argv[]) {
     compute(G, P);
     G.del();
   }
+  //MIND_TODO
+  while (1);
 }
 
 #endif
