@@ -248,6 +248,8 @@ public:
 
     // Reset values before incremental computation
     parallel_for(uintV v = 0; v < n; v++) {
+      printf("v: %d, thread: %d\n", v, pthread_self());
+      
       frontier_curr[v] = 0;
       frontier_next[v] = 0;
       changed[v] = 0;
