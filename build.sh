@@ -16,5 +16,8 @@ sudo apt-get install -y libcilkrts5
 ./PageRank -nWorkers 8 -maxIters 1 -numberOfUpdateBatches 1 -nEdges 0 -streamPath ../inputs/sample_edge_operations.empty.txt /media/data_ssds/yanpeng/wikipedia_link_en/wikipedia_link_en.adj
 
 
-# youtube graph 1.2GB mem
+# youtube link graph 1.2GB mem
 ./PageRank -nWorkers 40 -maxIters 10 -numberOfUpdateBatches 1 -nEdges 0 -streamPath ../inputs/sample_edge_operations.empty.txt /media/data_ssds/yanpeng/youtube-links/youtube-links.adj
+
+# youtube friendship graph
+./PageRank -nWorkers 8 -maxIters 5 -numberOfUpdateBatches 1 -nEdges 0 -streamPath ../inputs/sample_edge_operations.empty.txt /media/data_ssds/yanpeng/com-youtube/com-youtube.adj
