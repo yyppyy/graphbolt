@@ -42,6 +42,27 @@
 
 using namespace std;
 
+void *MIND_malloc(unsigned long size) {
+  // MIND_TODO
+  // add special mmap flag so that switch will not populate cache entry for a writable file mapping
+
+  static unsigned long tot_size = 0;
+  tot_size += size;
+  cout << "private memory size: " << (tot_size / (1 << 20)) << "MB" << endl;
+
+  int mmap_flags = MAP_PRIVATE|MAP_ANONYMOUS;
+#ifdef CONFIG_MIND
+#endif
+  return mmap(NULL, size * sizeof(bool), PROT_READ|PROT_WRITE, mmap_flags, -1, 0);
+}
+
+int MIND_free(void *addr, unsigned long size) {
+  static unsigned long tot_free_size = 0;
+  tot_free_size += size;
+  cout << "private memory free size: " << (tot_free_size / (1 << 20)) << "MB" << endl;
+  return munmap(addr, size);
+}
+
 struct edge {
   uintV source;
   uintV destination;
@@ -380,8 +401,8 @@ public:
 // MIND_TODO
 // let's just skip free for now
     if (ai != NULL) {
-      munmap(ai, m * sizeof(uintV));
-      munmap(_outEdgeOffsets, n * sizeof(intE));
+      MIND_free(ai, m * sizeof(uintV));
+      MIND_free(_outEdgeOffsets, n * sizeof(intE));
 #ifdef EDGEDATA
       parallel_for(uintE i = 0; i < mm; i++) { _outEdgeData[i].del(); }
       free(_outEdgeData);
@@ -389,8 +410,8 @@ public:
     }
 
     if (_inEdges != NULL) {
-      munmap(_inEdges, m * sizeof(uintV));
-      munmap(_inEdgeOffsets, n * sizeof(intE));
+      MIND_free(_inEdges, m * sizeof(uintV));
+      MIND_free(_inEdgeOffsets, n * sizeof(intE));
 #ifdef EDGEDATA
       parallel_for(uintE i = 0; i < mm; i++) { _inEdgeData[i].del(); }
       free(_inEdgeData);

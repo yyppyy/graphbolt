@@ -95,8 +95,8 @@ struct words {
     free(Strings);
   }
   void del_mmapped() {
-    munmap(Chars, n * sizeof(char));
-    munmap(Strings, m * sizeof(char *));
+    MIND_free(Chars, n * sizeof(char));
+    MIND_free(Strings, m * sizeof(char *));
   }
 };
 
@@ -111,20 +111,6 @@ inline bool isSpace(char c) {
   default:
     return false;
   }
-}
-
-static void *MIND_malloc(unsigned long size) {
-  // MIND_TODO
-  // add special mmap flag so that switch will not populate cache entry for a writable file mapping
-
-  static unsigned long tot_size = 0;
-  tot_size += size;
-  cout << "total private memory size: " << (tot_size / (1 << 20)) << "MB" << endl;
-
-  int mmap_flags = MAP_PRIVATE|MAP_ANONYMOUS;
-#ifdef CONFIG_MIND
-#endif
-  return mmap(NULL, size * sizeof(bool), PROT_READ|PROT_WRITE, mmap_flags, -1, 0);
 }
 
 _seq<char> readStringFromFile(char *fileName) {
@@ -207,8 +193,9 @@ words stringToWords(char *Str, unsigned long n) {
 
   //MIND_TODO
   // skip free for now
-  munmap(offsets, n * sizeof(unsigned long));
-  munmap(FL, n * sizeof(bool));
+  free(offsets);
+  //MIND_free(offsets, n * sizeof(unsigned long));
+  MIND_free(FL, n * sizeof(bool));
   return words(Str, n, SA, m);
 }
 
@@ -503,7 +490,7 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
     // MIND_TODO
     // free(temp);
     // skip free for now
-    munmap(temp, m * sizeof(intPair));
+    MIND_free(temp, m * sizeof(intPair));
 
     // fill in offsets of degree 0 vertices by taking closest non-zero
     // offset to the right
