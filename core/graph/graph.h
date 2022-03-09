@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <unordered_set>
 #include <vector>
+#include <sys/mman.h>
 
 using namespace std;
 
@@ -378,10 +379,9 @@ public:
     }
 // MIND_TODO
 // let's just skip free for now
-/*
     if (ai != NULL) {
-      free(ai);
-      free(_outEdgeOffsets);
+      munmap(ai, m * sizeof(uintV));
+      munmap(_outEdgeOffsets, n * sizeof(intE));
 #ifdef EDGEDATA
       parallel_for(uintE i = 0; i < mm; i++) { _outEdgeData[i].del(); }
       free(_outEdgeData);
@@ -389,14 +389,13 @@ public:
     }
 
     if (_inEdges != NULL) {
-      free(_inEdges);
-      free(_inEdgeOffsets);
+      munmap(_inEdges, m * sizeof(uintV));
+      munmap(_inEdgeOffsets, n * sizeof(intE));
 #ifdef EDGEDATA
       parallel_for(uintE i = 0; i < mm; i++) { _inEdgeData[i].del(); }
       free(_inEdgeData);
 #endif
     }
-*/
   }
 
   void setSymmetric(bool flag) { symmetric = flag; }

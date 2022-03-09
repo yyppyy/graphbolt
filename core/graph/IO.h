@@ -95,8 +95,8 @@ struct words {
     free(Strings);
   }
   void del_mmapped() {
-    munmap(Chars, n);
-    free(Strings);
+    munmap(Chars, n * sizeof(char));
+    munmap(Strings, m * sizeof(char *));
   }
 };
 
@@ -207,8 +207,8 @@ words stringToWords(char *Str, unsigned long n) {
 
   //MIND_TODO
   // skip free for now
-  // free(offsets);
-  // free(FL);
+  munmap(offsets, n * sizeof(unsigned long));
+  munmap(FL, n * sizeof(bool));
   return words(Str, n, SA, m);
 }
 
@@ -421,7 +421,7 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
   }
   //MIND_TODO: if cause problem, delete it
   //skip free for now
-  //W.del_mmapped(); // to deal with performance bug in malloc
+  W.del_mmapped(); // to deal with performance bug in malloc
   vertex *v = newA(vertex, n);
   {
     parallel_for(uintV i = 0; i < n; i++) {
@@ -503,7 +503,7 @@ graph<vertex> readGraphFromFile(char *fname, bool isSymmetric, bool simpleFlag,
     // MIND_TODO
     // free(temp);
     // skip free for now
-    // munmap(temp, m * sizeof(intPair));
+    munmap(temp, m * sizeof(intPair));
 
     // fill in offsets of degree 0 vertices by taking closest non-zero
     // offset to the right
