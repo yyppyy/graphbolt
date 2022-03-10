@@ -541,6 +541,9 @@ public:
   // ======================================================================
   void run() {
     initialCompute();
+  #ifndef MIND_INCREMENTAL_COMPUTE
+    return
+  #endif
 
     // ======================================================================
     // Incremental Compute - Get the next update batch from ingestor
