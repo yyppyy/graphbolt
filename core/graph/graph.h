@@ -57,10 +57,14 @@ void *MIND_malloc(unsigned long size) {
 }
 
 int MIND_free(void *addr, unsigned long size) {
+#ifdef MIND_FREE_MEM
   static unsigned long tot_free_size = 0;
   tot_free_size += size;
   cout << "private memory free size: " << (tot_free_size / (1 << 20)) << "MB" << endl;
   return munmap(addr, size);
+#else
+  return 0;
+#endif
 }
 
 struct edge {

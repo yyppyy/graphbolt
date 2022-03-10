@@ -29,6 +29,13 @@ ALL=PageRank LabelPropagation CF COEM SSSP BFS
 
 # make
 
+pagerank:
+	/usr/bin/g++-7 -g -O3 -DCILK  -DEDGELONG  PageRank.C  -o pagerank -fcilkplus -lcilkrts -ldl -static -std=c++14 && cp pagerank test_mltthrd
+
+run_pagerank: pagerank
+	./PageRank -nWorkers $(WORKERS) -maxIters $(ITERS) -numberOfUpdateBatches 1 -nEdges 0 -streamPath ../inputs/sample_edge_operations.empty.txt /test_program_log/graphbolt/com-dblp.adj
+
+
 all: $(ALL)
 
 % : %.C $(COMMON) $(GRAPH) $(GRAPHBOLT) $(OTHERS)
@@ -38,4 +45,3 @@ all: $(ALL)
 
 clean :
 	rm -f *.o *.obj $(ALL)
-
