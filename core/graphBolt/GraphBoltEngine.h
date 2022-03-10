@@ -542,7 +542,7 @@ public:
   void run() {
     initialCompute();
   #ifndef MIND_INCREMENTAL_COMPUTE
-    return
+    return;
   #endif
 
     // ======================================================================
