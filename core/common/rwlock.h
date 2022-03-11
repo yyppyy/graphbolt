@@ -24,6 +24,7 @@
 #include "parallel.h"
 
 class RWLock {
+#ifdef MIND_RWLOCK
   pthread_rwlock_t rwlock;
 
 public:
@@ -36,6 +37,20 @@ public:
   void unlock() { pthread_rwlock_unlock(&rwlock); }
 
   void destroy() { pthread_rwlock_destroy(&rwlock); }
+#else
+  pthread_mutex_t mutex;
+
+public:
+  void init() { pthread_mutex_init(&mutex, NULL); }
+
+  void readLock() { pthread_mutex_lock(&mutex); }
+
+  void writeLock() { pthread_mutex_lock(&mutex); }
+
+  void unlock() { pthread_mutex_unlock(&mutex); }
+
+  void destroy() { pthread_mutex_destroy(&mutex); }
+#endif
 };
 
 #endif //__RWLOCK_HPP__
