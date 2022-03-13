@@ -57,7 +57,7 @@ int parallel_main(int argc, char *argv[]) {
     cout << "Graph created" << endl;
     compute(G, P);
     //MIND_TODO
-    parallel_for_1(;1;) {
+    parallel_for_1(int i = 0; 1; ++i) {
       sleep(600);
     }
     G.del();
@@ -68,7 +68,7 @@ int parallel_main(int argc, char *argv[]) {
     cout << "Graph created" << endl;
     compute(G, P);
     //MIND_TODO
-    parallel_for_1(;1;) {
+    parallel_for_1(int i = 0; 1; ++i) {
       sleep(600);
     }
     G.del();
