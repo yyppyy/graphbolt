@@ -57,7 +57,9 @@ int parallel_main(int argc, char *argv[]) {
     cout << "Graph created" << endl;
     compute(G, P);
     //MIND_TODO
-    while (1);
+    parallel_for_1(;1;) {
+      sleep(600);
+    }
     G.del();
   } else {
     // asymmetric graph
@@ -66,7 +68,9 @@ int parallel_main(int argc, char *argv[]) {
     cout << "Graph created" << endl;
     compute(G, P);
     //MIND_TODO
-    while (1);
+    parallel_for_1(;1;) {
+      sleep(600);
+    }
     G.del();
   }
 }
