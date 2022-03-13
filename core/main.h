@@ -56,6 +56,8 @@ int parallel_main(int argc, char *argv[]) {
     G.setSymmetric(true);
     cout << "Graph created" << endl;
     compute(G, P);
+    //MIND_TODO
+    while (1);
     G.del();
   } else {
     // asymmetric graph
@@ -63,10 +65,10 @@ int parallel_main(int argc, char *argv[]) {
         readGraph<asymmetricVertex>(iFile, symmetric, simpleFlag, debugFlag);
     cout << "Graph created" << endl;
     compute(G, P);
+    //MIND_TODO
+    while (1);
     G.del();
   }
-  //MIND_TODO
-  while (1);
 }
 
 #endif

@@ -24,6 +24,128 @@
 
 #include "GraphBoltEngine.h"
 
+
+/*
+ * Profiling points
+ *
+ * We borrowed profiling system from LegoOS.
+ * LegoOS: https://github.com/WukLab/LegoOS
+ * 
+ * We added profiling outside of kernel itself.
+ * For example, kernel module which is not compiled with 
+ * the kernel can use profiling points defined in the kernel
+ * and use PROFILE_LEAVE_PTR instead of PROFILE_LEAVE.
+ * Those profiling points used outside of the kernel
+ * should be exported in this file by using 
+ * PROTO_PROFILE_WITH_EXPORT()
+ */
+
+
+// .h
+#include <string>
+#include <atomic>
+#include <chrono>
+
+#define CONFIG_PROFILE_POINTS
+#define MAX_PROFILE_POINTS 32
+#define MAX_PROFILE_THREADS 16
+#ifndef PAGE_SIZE
+#define PAGE_SIZE 4096
+#endif
+#ifndef CACHE_SIZE
+#define CACHE_SIZE (PAGE_SIZE * 16)
+#endif
+
+enum {
+  PP_MUTEX_ACQ = 0,
+  PP_MUTEX_RLX,
+	PP_MUTEX_CS,
+	NUM_PP
+};
+
+struct profile_point {
+    unsigned long nr;
+    double time_us;
+};
+
+struct atomic_profile_point {
+	std::atomic_ulong nr;
+	std::atomic<double> time_us;
+};
+
+struct alignas(PAGE_SIZE) profile_point_arr {
+	struct profile_point arr[MAX_PROFILE_POINTS];
+};
+
+struct alignas(PAGE_SIZE) atomic_profile_point_arr {
+	struct atomic_profile_point arr[MAX_PROFILE_POINTS];
+};
+
+void print_local_profile_points(void);
+void print_global_profile_points(void);
+void clear_local_profile_points(void);
+void report_local_profile_points(void);
+void profile_add(int pp, double time_us);
+
+#define _PP_TIME(pp, var)	__##pp##var
+
+#define PROFILE_START(pp)             \
+	auto _PP_TIME(pp, t_start) = std::chrono::high_resolution_clock::now();
+
+#define PROFILE_LEAVE(pp)		\
+		auto _PP_TIME(pp, t_end) = std::chrono::high_resolution_clock::now();                                \
+		std::chrono::duration<double, std::micro> _PP_TIME(pp, t_double) = _PP_TIME(pp, t_end) - _PP_TIME(pp, t_start);                              \
+		profile_add(pp, _PP_TIME(pp, t_double).count());
+
+
+// .c
+std::string pp_names[NUM_PP] = {
+  "mutex_acquisition",
+  "mutex_release",
+  "critical section"
+};
+
+thread_local struct profile_point_arr pps;
+struct atomic_profile_point_arr pps_global;
+
+void print_global_profile_points(void) {
+    printf("--- global profile points ---\n");
+    for (int pp = 0; pp < NUM_PP; ++pp) {
+        printf("%s nr[%lu] total[%lfus] avg[%lfus]\n", pp_names[pp].c_str(),
+          pps_global.arr[pp].nr.load(), pps_global.arr[pp].time_us.load(),
+          pps_global.arr[pp].time_us.load() / pps_global.arr[pp].nr.load());
+    }
+}
+
+void print_local_profile_points(void) {
+    printf("--- local profile points ---\n");
+    for (int pp = 0; pp < NUM_PP; ++pp) {
+        printf("%s nr[%lu] total[%lfus] avg[%lfus]\n", pp_names[pp].c_str(),
+          pps.arr[pp].nr, pps.arr[pp].time_us,
+          pps.arr[pp].time_us / pps.arr[pp].nr);
+    }
+}
+
+void clear_local_profile_points(void) {
+  memset(&pps, 0, sizeof(pps));
+}
+
+void report_local_profile_points(void) {
+  for (int pp = 0; pp < NUM_PP; ++pp) {
+    auto &_pp = pps_global.arr[pp];
+    _pp.nr.fetch_add(pps.arr[pp].nr);
+    for (double n = _pp.time_us.load(); !_pp.time_us.compare_exchange_strong(n, n + pps.arr[pp].time_us);)
+      ;
+  }
+}
+
+void profile_add(int pp, double time_us) {
+    ++(pps.arr[pp].nr);
+    pps.arr[pp].time_us += time_us;
+}
+
+
+
 // ======================================================================
 // GRAPHBOLTENGINESIMPLE
 // ======================================================================
@@ -64,6 +186,10 @@ public:
                     GlobalInfoType>::initTemporaryStructures(start_index,
                                                              end_index);
   }
+
+
+  #define MIND_WARMUP_ITER 1
+
   // ======================================================================
   // TRADITIONAL INCREMENTAL COMPUTATION
   // ======================================================================
@@ -84,6 +210,7 @@ public:
       for (iter = start_iteration; iter < max_iterations; iter++) {
         // initialize timers
         {
+          iteration_timer.start();
           phase_timer.start();
           misc_time = 0;
           copy_time = 0;
@@ -143,9 +270,29 @@ public:
                                contrib_change, global_info);
               if (ret) {
                 if (use_lock) {
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_START(PP_MUTEX_ACQ)
+#endif
                   vertex_locks[v].writeLock();
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_LEAVE(PP_MUTEX_ACQ)
+#endif
+
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_START(PP_MUTEX_CS)
+#endif
                   addToAggregation(contrib_change, delta[v], global_info);
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_LEAVE(PP_MUTEX_CS)
+#endif
+
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_START(PP_MUTEX_RLX)
+#endif
                   vertex_locks[v].unlock();
+#ifdef CONFIG_PROFILE_POINTS
+                  PROFILE_LEAVE(PP_MUTEX_RLX)
+#endif
                 } else {
                   addToAggregationAtomic(contrib_change, delta[v], global_info);
                 }
@@ -214,10 +361,34 @@ public:
         frontier_curr_vs = temp_vs;
         misc_time += phase_timer.next();
         iteration_time = iteration_timer.stop();
+        cout << "iteration:" << iter << " time:"  << iteration_time << "s" << endl;
 
         if (ae_enabled && iter == 1) {
           adaptive_executor.setApproximateTimeForCurrIter(iteration_time);
         }
+
+#ifdef CONFIG_PROFILE_POINTS
+        // MIND_TODO sleep for kernel profile points cleaning
+        if (iter <= MIND_WARMUP_ITER) {
+          int nWorkers = __cilkrts_get_nworkers();
+          parallel_for_1(int t = 0; t < nWorkers; ++t) {
+            clear_local_profile_points();
+            printf("local profile point cleared by pthread[%ld] tid[%d]\n", pthread_self(), t);
+            sleep(1);
+          }
+          cout << "done warm up iterations, sleep " << 60 << "s, please clear kernel profile points now" << endl;
+          sleep(60);
+        }
+        // MIND_TODO report thread local profile
+        if (iter == max_iterations - 1) {
+          int nWorkers = __cilkrts_get_nworkers();
+          parallel_for_1(int t = 0; t < nWorkers; ++t) {
+            report_local_profile_points();
+            printf("local profile point reported by pthread[%ld] tid[%d]\n", pthread_self(), t);
+            sleep(1);
+          }
+        }
+#endif
         // Convergence check
         converged_iteration = iter;
         if (frontier_curr_vs.isEmpty()) {
@@ -228,6 +399,11 @@ public:
     if (ae_enabled) {
       adaptive_executor.updateEquation(converged_iteration);
     }
+
+#ifdef CONFIG_PROFILE_POINTS
+    print_global_profile_points();
+#endif
+
     return converged_iteration;
   }
 

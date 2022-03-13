@@ -24,7 +24,7 @@
 #include "parallel.h"
 
 class RWLock {
-#ifdef MIND_RWLOCK
+#ifndef MIND_MUTEX
   pthread_rwlock_t rwlock;
 
 public:

@@ -579,7 +579,7 @@ public:
 
     cout << "Initial graph processing : " << full_timer.stop() << "\n";
     cout << "Number of iterations : " << iters << "\n";
-    printOutput();
+    // printOutput();
     // testPrint();
   }
 
