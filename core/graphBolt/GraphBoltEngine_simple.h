@@ -407,6 +407,11 @@ public:
     print_global_profile_points();
 #endif
 
+    //MIND_TODO
+    parallel_for_1(int t = 0; t < 1000; ++t) {
+      sleep(600);
+    }
+
     return converged_iteration;
   }
 
