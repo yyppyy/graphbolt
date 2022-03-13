@@ -370,14 +370,17 @@ public:
 #ifdef CONFIG_PROFILE_POINTS
         // MIND_TODO sleep for kernel profile points cleaning
         if (iter <= MIND_WARMUP_ITER) {
+          atomic_int barrier;
+          barrier.store(0, memory_order_release);
           int nWorkers = __cilkrts_get_nworkers();
           parallel_for_1(int t = 0; t < nWorkers; ++t) {
             clear_local_profile_points();
-            printf("local profile point cleared by pthread[%ld] tid[%d]\n", pthread_self(), t);
-            sleep(1);
+            printf("local profile point cleared by pthread[%ld] tid[%d], done warm up, sleep 60s, please clear kernel profile points\n", pthread_self(), t);
+            sleep(60);
+            barrier.fetch_add(1, memory_order_release);
+            while (barrier.load(memory_order_acquire) != nWorkers)
+              ;
           }
-          cout << "done warm up iterations, sleep " << 60 << "s, please clear kernel profile points now" << endl;
-          sleep(60);
         }
         // MIND_TODO report thread local profile
         if (iter == max_iterations - 1) {
