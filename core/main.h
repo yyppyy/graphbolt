@@ -49,6 +49,12 @@ int parallel_main(int argc, char *argv[]) {
 
   cout << fixed;
 
+  //config malloc
+  int res;
+  if ((res = mallopt(M_TRIM_THRESHOLD, -1)) != 1) {
+    cout << "fail to config malloc" << endl;
+  }
+
   if (symmetric) {
     // symmetric graph
     graph<symmetricVertex> G =
