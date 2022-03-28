@@ -49,10 +49,6 @@ int parallel_main(int argc, char *argv[]) {
 
   cout << fixed;
 
-  // warmup malloc here
-  char *tmp = (char *)malloc(1 << 30);
-  free(tmp);
-
   if (symmetric) {
     // symmetric graph
     graph<symmetricVertex> G =
