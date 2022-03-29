@@ -51,7 +51,7 @@ int parallel_main(int argc, char *argv[]) {
 
   //config malloc
   int res;
-  if ((res = mallopt(M_MMAP_THRESHOLD, 0)) != 1) {
+  if ((res = mallopt(M_TRIM_THRESHOLD, -1)) != 1) {
     cout << "fail to config malloc" << endl;
   }
 
