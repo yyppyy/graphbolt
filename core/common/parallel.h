@@ -47,8 +47,9 @@ static void setWorkers(int n) {
   //__cilkrts_init();
   std::stringstream ss;
   ss << n;
-  if (0 != __cilkrts_set_param("nworkers", ss.str().c_str())) {
-    std::cerr << "failed to set worker count!" << std::endl;
+  int ret;
+  if ((ret = __cilkrts_set_param("nworkers", ss.str().c_str())) != 0) {
+    std::cerr << "failed to set worker count ret:" << ret << std::endl;
     std::abort();
   }
 }
