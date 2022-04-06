@@ -408,8 +408,9 @@ public:
 #endif
 
     //MIND_TODO
-    parallel_for_1(int t = 0; t < 1000; ++t) {
-      sleep(600);
+    parallel_for_1(int t = 0; t < 100000; ++t) {
+      brk(0);
+      sleep(10);
     }
 
     return converged_iteration;
