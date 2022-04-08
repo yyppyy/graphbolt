@@ -32,9 +32,9 @@ public:
 
   void readLock() { pthread_rwlock_rdlock(&rwlock); }
 
-  void writeLock() { printf("try %p\n", &rwlock); pthread_rwlock_wrlock(&rwlock); printf("get %p\n", &rwlock);}
+  void writeLock() { /*printf("try %p\n", &rwlock);*/ pthread_rwlock_wrlock(&rwlock); /*printf("get %p\n", &rwlock);*/}
 
-  void unlock() { printf("try u %p\n", &rwlock); pthread_rwlock_unlock(&rwlock); printf("u %p\n", &rwlock);}
+  void unlock() { /*printf("try u %p\n", &rwlock);*/ pthread_rwlock_unlock(&rwlock); /*printf("u %p\n", &rwlock);*/}
 
   void destroy() { pthread_rwlock_destroy(&rwlock); }
 #else
