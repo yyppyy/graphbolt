@@ -203,6 +203,8 @@ public:
     bool use_delta = true;
     int iter = start_iteration;
 
+    timer mind_timer;
+
     if (frontier_curr_vs.numNonzeros() == 0) {
       converged_iteration = start_iteration;
 
@@ -214,6 +216,11 @@ public:
           phase_timer.start();
           misc_time = 0;
           copy_time = 0;
+        }
+
+        {
+          if (iter == MIND_WARMUP_ITER)
+            mind_timer.start();
         }
 
         // ========== COPY - Prepare curr iteration ==========
@@ -408,9 +415,11 @@ public:
 #endif
 
     //MIND_TODO
+    double mind_time = mind_timer.stop();
+    cout << "mind time:"  << mind_time << "s" << endl;
     parallel_for_1(int t = 0; t < 100000; ++t) {
-      brk(0);
-      sleep(10);
+      // brk(0);
+      sleep(600);
     }
 
     return converged_iteration;
