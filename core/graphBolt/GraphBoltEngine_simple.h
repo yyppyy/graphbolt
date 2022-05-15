@@ -218,11 +218,6 @@ public:
           copy_time = 0;
         }
 
-        {
-          if (iter == MIND_WARMUP_ITER)
-            mind_timer.start();
-        }
-
         // ========== COPY - Prepare curr iteration ==========
         if (iter > 0) {
           // Copy the aggregate and actual value from iter-1 to iter
@@ -376,7 +371,7 @@ public:
 
 #ifdef CONFIG_PROFILE_POINTS
         // MIND_TODO sleep for kernel profile points cleaning
-        if (iter <= MIND_WARMUP_ITER) {
+        if (iter == MIND_WARMUP_ITER) {
           atomic_int barrier;
           barrier.store(0, memory_order_release);
           int nWorkers = __cilkrts_get_nworkers();
@@ -388,6 +383,7 @@ public:
             while (barrier.load(memory_order_acquire) != nWorkers)
               ;
           }
+          mind_timer.start();
         }
         // MIND_TODO report thread local profile
         if (iter == max_iterations - 1) {
