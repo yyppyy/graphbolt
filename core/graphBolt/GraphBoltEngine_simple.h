@@ -391,7 +391,7 @@ public:
           parallel_for_1(int t = 0; t < nWorkers; ++t) {
             report_local_profile_points();
             printf("local profile point reported by pthread[%ld] tid[%d]\n", pthread_self(), t);
-            sleep(1);
+            // sleep(1);
           }
         }
 #endif
